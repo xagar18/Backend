@@ -1,7 +1,7 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
-import userRouter from './routes/auth.route';
+import userRouter from './routes/auth.route.js';
 const app = express();
 const port = process.env.PORT;
 
