@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
 import User from '../model/User.model.js';
+import sendEmail from '../services/mailService.js';
 
 // register user
 const registerUser = async (req, res) => {
@@ -47,24 +47,11 @@ const registerUser = async (req, res) => {
     newUser.verificationToken = token;
     await newUser.save();
 
-    //send token as email to user
-    var transport = nodemailer.createTransport({
-      host: process.env.MAILTRAP_HOST,
-      port: process.env.MAILTRAP_PORT,
-      auth: {
-        user: process.env.MAILTRAP_USERNAME,
-        pass: process.env.MAILTRAP_PASSWORD,
-      },
-    });
-    const mailOptions = {
-      from: process.env.MAILTRAP_SENDEREMAIL,
-      to: newUser.email,
-      subject: 'Verify your email',
-      text: `please on following link:
-      ${process.env.BASEURL}/api/v1/user/verify/${token}
-      `,
-    };
-    await transport.sendMail(mailOptions);
+    sendEmail(
+      newUser.email,
+      'Verify your email',
+      `Please click on the following link to verify your email: ${process.env.BASEURL}/api/v1/user/verify/${token}`,
+    );
 
     //send success status to user
     res.status(201).json({
@@ -137,6 +124,13 @@ const login = async (req, res) => {
         message: 'Invalid email or password',
       });
     }
+    // check user is verified or not...
+    if (await !userFound.isVerified) {
+      return res.status(201).json({
+        message: 'User is not verified',
+      });
+    }
+
     // password check
     const isMatched = await bcrypt.compare(password, userFound.password);
     console.log(isMatched);
@@ -249,24 +243,12 @@ const forgotPassword = async (req, res) => {
 
     await userFound.save();
 
-    // send token as email to user
-    var transport = nodemailer.createTransport({
-      host: process.env.MAILTRAP_HOST,
-      port: process.env.MAILTRAP_PORT,
-      auth: {
-        user: process.env.MAILTRAP_USERNAME,
-        pass: process.env.MAILTRAP_PASSWORD,
-      },
-    });
-    const mailOptions = {
-      from: process.env.MAILTRAP_SENDEREMAIL,
-      to: userFound.email,
-      subject: 'Reset your password',
-      text: `please on following link:
-      ${process.env.BASEURL}/api/v1/user/reset/${resetToken}
-      `,
-    };
-    await transport.sendMail(mailOptions);
+    // send reset password link to user email
+    sendEmail(
+      userFound.email,
+      'Reset your password',
+      `Please click on the following link to reset your password: ${process.env.BASEURL}/api/v1/user/reset/${resetToken}`,
+    );
 
     //send success status to user
     res.status(200).json({
