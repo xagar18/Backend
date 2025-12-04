@@ -12,9 +12,9 @@ async function sendEmail(to, subject, text) {
   });
   const mailOptions = {
     from: process.env.MAILTRAP_SENDEREMAIL,
-    to, 
-    subject, 
-    text, 
+    to,
+    subject,
+    text,
   };
   try {
     await transport.sendMail(mailOptions);
